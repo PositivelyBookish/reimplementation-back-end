@@ -4,25 +4,29 @@ module TopicBasedRubricLookup
   extend ActiveSupport::Concern
 
   def assignment_questionnaire_for_response_map(response_map, round:)
-    return assignment_questionnaires.find_by(used_in_round: round) unless response_map.is_a?(ReviewResponseMap)
+    assignment_questionnaires_for_response_map(response_map, round: round).first
+  end
 
-    review_assignment_questionnaire(response_map, round) || assignment_questionnaires.find_by(used_in_round: round)
+  def assignment_questionnaires_for_response_map(response_map, round:)
+    return assignment_questionnaires.where(used_in_round: round).order(:id).to_a unless response_map.is_a?(ReviewResponseMap)
+
+    review_assignment_questionnaires_for_response_map(response_map, round)
   end
 
   private
 
-  def review_assignment_questionnaire(response_map, round)
+  def review_assignment_questionnaires_for_response_map(response_map, round)
     topic_id = vary_by_topic ? confirmed_topic_id_for(response_map.reviewee) : nil
 
     rubric_lookup_order(topic_id, round).each do |project_topic_id, used_in_round|
-      rubric = review_assignment_questionnaires.find_by(
+      rubrics = review_assignment_questionnaires.where(
         project_topic_id: project_topic_id,
         used_in_round: used_in_round
-      )
-      return rubric if rubric
+      ).order(:id).to_a
+      return rubrics if rubrics.present?
     end
 
-    nil
+    []
   end
 
   def confirmed_topic_id_for(reviewee)

@@ -20,19 +20,46 @@ RSpec.describe StudentTasksController, type: :controller do
         used_in_round: 1
       )
     end
+    let(:second_questionnaire) { instance_double(Questionnaire, name: 'Compliance Review Rubric') }
+    let(:second_assignment_questionnaire) do
+      instance_double(
+        AssignmentQuestionnaire,
+        id: 11,
+        questionnaire_id: 21,
+        questionnaire: second_questionnaire,
+        project_topic_id: 30,
+        used_in_round: 1
+      )
+    end
 
-    it 'returns the rubric selected for a response map' do
+    it 'returns the rubrics selected for a response map' do
       allow(ResponseMap).to receive(:find).with('5').and_return(response_map)
       allow(response_map).to receive(:response_assignment).and_return(assignment)
       allow(assignment)
-        .to receive(:assignment_questionnaire_for_response_map)
+        .to receive(:assignment_questionnaires_for_response_map)
         .with(response_map, round: 1)
-        .and_return(assignment_questionnaire)
+        .and_return([assignment_questionnaire, second_assignment_questionnaire])
 
       get :rubric_for, params: { response_map_id: 5, round: 1 }, format: :json
 
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)).to eq(
+        'assignment_questionnaires' => [
+          {
+            'assignment_questionnaire_id' => 10,
+            'questionnaire_id' => 20,
+            'questionnaire_name' => 'Security Review Rubric',
+            'project_topic_id' => 30,
+            'used_in_round' => 1
+          },
+          {
+            'assignment_questionnaire_id' => 11,
+            'questionnaire_id' => 21,
+            'questionnaire_name' => 'Compliance Review Rubric',
+            'project_topic_id' => 30,
+            'used_in_round' => 1
+          }
+        ],
         'assignment_questionnaire_id' => 10,
         'questionnaire_id' => 20,
         'questionnaire_name' => 'Security Review Rubric',
@@ -45,9 +72,9 @@ RSpec.describe StudentTasksController, type: :controller do
       allow(ResponseMap).to receive(:find).with('5').and_return(response_map)
       allow(response_map).to receive(:response_assignment).and_return(assignment)
       allow(assignment)
-        .to receive(:assignment_questionnaire_for_response_map)
+        .to receive(:assignment_questionnaires_for_response_map)
         .with(response_map, round: nil)
-        .and_return(nil)
+        .and_return([])
 
       get :rubric_for, params: { response_map_id: 5 }, format: :json
 

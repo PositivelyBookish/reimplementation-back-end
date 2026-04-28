@@ -27,16 +27,27 @@ class StudentTasksController < ApplicationController
 
   def rubric_for
     response_map = ResponseMap.find(params[:response_map_id])
-    assignment_questionnaire = response_map
-                               .response_assignment
-                               .assignment_questionnaire_for_response_map(response_map, round: rubric_round)
+    assignment_questionnaires = response_map
+                                .response_assignment
+                                .assignment_questionnaires_for_response_map(response_map, round: rubric_round)
 
-    if assignment_questionnaire.nil?
+    if assignment_questionnaires.empty?
       render json: { error: 'No review rubric found for this response map.' }, status: :not_found
       return
     end
 
+    assignment_questionnaire = assignment_questionnaires.first
+
     render json: {
+      assignment_questionnaires: assignment_questionnaires.map do |mapping|
+        {
+          assignment_questionnaire_id: mapping.id,
+          questionnaire_id: mapping.questionnaire_id,
+          questionnaire_name: mapping.questionnaire&.name,
+          project_topic_id: mapping.project_topic_id,
+          used_in_round: mapping.used_in_round
+        }
+      end,
       assignment_questionnaire_id: assignment_questionnaire.id,
       questionnaire_id: assignment_questionnaire.questionnaire_id,
       questionnaire_name: assignment_questionnaire.questionnaire&.name,

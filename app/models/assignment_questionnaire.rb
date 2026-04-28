@@ -22,16 +22,15 @@ class AssignmentQuestionnaire < ApplicationRecord
     return unless review_questionnaire?
 
     duplicate = AssignmentQuestionnaire
-                .joins(:questionnaire)
                 .where(
                   assignment_id: assignment_id,
                   project_topic_id: project_topic_id,
                   used_in_round: used_in_round,
-                  questionnaires: { questionnaire_type: 'ReviewQuestionnaire' }
+                  questionnaire_id: questionnaire_id
                 )
     duplicate = duplicate.where.not(id: id) if persisted?
 
-    errors.add(:base, 'review rubric already exists for this assignment, topic, and round') if duplicate.exists?
+    errors.add(:base, 'review rubric already exists for this assignment, topic, round, and questionnaire') if duplicate.exists?
   end
 
   def review_questionnaire?
